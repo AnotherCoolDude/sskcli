@@ -14,8 +14,76 @@
 
 package main
 
-import "github.com/AnotherCoolDude/sskcli/cmd"
+import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/gizak/termui/widgets"
+
+	ui "github.com/gizak/termui"
+)
+
+var (
+	toolList = []string{
+		"Auslastung",
+		"Deckungsbeitrag",
+	}
+	sskList *widgets.List
+)
+
+const ()
 
 func main() {
-	cmd.Execute()
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
+	}
+	defer ui.Close()
+	grid := ui.NewGrid()
+	sskList = initList()
+	grid.Set(
+		ui.NewRow(1.0/2, sskList),
+		ui.NewRow(1.0/2, sskList),
+	)
+
+	ui.Render(grid)
+
+	eventLoop()
+}
+
+func initList() *widgets.List {
+	sskList := widgets.NewList()
+	sskList.Title = "Selinka/Schmitz Toolbox"
+	sskList.Rows = toolList
+	sskList.TextStyle = ui.NewStyle(ui.ColorBlue)
+	sskList.WrapText = false
+
+	return sskList
+}
+
+func eventLoop() {
+
+	// handles kill signal sent to gotop
+	sigTerm := make(chan os.Signal, 2)
+	signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM)
+
+	uiEvents := ui.PollEvents()
+	//previousKey := ""
+
+	for {
+		select {
+		case <-sigTerm:
+			return
+		case e := <-uiEvents:
+			switch e.ID {
+			case "q", "<C-c>":
+				return
+			case "<Down>":
+				sskList.ScrollDown()
+			case "<Up>":
+				sskList.ScrollUp()
+			}
+		}
+	}
 }
