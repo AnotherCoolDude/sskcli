@@ -26,11 +26,13 @@ import (
 )
 
 var (
-	toolList = []string{
+	tools = []string{
 		"Auslastung",
 		"Deckungsbeitrag",
 	}
 	sskList *widgets.List
+	reqList *widgets.List
+	grid    *ui.Grid
 )
 
 const ()
@@ -40,26 +42,39 @@ func main() {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
-	grid := ui.NewGrid()
-	sskList = initList()
+	grid = ui.NewGrid()
+	toolList()
 	grid.Set(
-		ui.NewRow(1.0/2, sskList),
-		ui.NewRow(1.0/2, sskList),
+		ui.NewRow(1.0, sskList),
 	)
-
+	termWidth, termHeight := ui.TerminalDimensions()
+	grid.SetRect(0, 0, termWidth, termHeight)
 	ui.Render(grid)
-
 	eventLoop()
 }
 
-func initList() *widgets.List {
-	sskList := widgets.NewList()
-	sskList.Title = "Selinka/Schmitz Toolbox"
-	sskList.Rows = toolList
-	sskList.TextStyle = ui.NewStyle(ui.ColorBlue)
-	sskList.WrapText = false
+func toolList() {
+	if sskList == nil {
+		sskList := widgets.NewList()
+		sskList.Title = "Selinka/Schmitz Toolbox"
+		sskList.TextStyle = ui.NewStyle(ui.ColorBlue)
+		sskList.WrapText = false
+	}
+	sskList.Rows = tools
+}
 
-	return sskList
+func requirementsList(tool string) {
+	if reqList == nil {
+		reqList = widgets.NewList()
+		reqList.Title = "Benötigte Listen"
+		reqList.WrapText = false
+	}
+	switch tool {
+	case "Auslastung":
+		reqList.Rows = []string{"Auslastung 1", "Auslastung 2"}
+	case "Rentabilität":
+		reqList.Rows = []string{"Rent 1", "Rent 2"}
+	}
 }
 
 func eventLoop() {
@@ -81,8 +96,10 @@ func eventLoop() {
 				return
 			case "<Down>":
 				sskList.ScrollDown()
+				ui.Render(sskList)
 			case "<Up>":
 				sskList.ScrollUp()
+				ui.Render(sskList)
 			}
 		}
 	}
