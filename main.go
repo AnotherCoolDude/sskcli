@@ -43,10 +43,17 @@ func main() {
 	}
 	defer ui.Close()
 	grid = ui.NewGrid()
+	ui.Theme.Default = ui.NewStyle(ui.ColorBlack)
+
 	toolList()
+	requirementsList(tools[0])
 	grid.Set(
-		ui.NewRow(1.0, sskList),
+		ui.NewRow(1.0,
+			ui.NewCol(1.0/2, sskList),
+			ui.NewCol(1.0/2, reqList),
+		),
 	)
+
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
 	ui.Render(grid)
@@ -55,10 +62,10 @@ func main() {
 
 func toolList() {
 	if sskList == nil {
-		sskList := widgets.NewList()
+		sskList = widgets.NewList()
 		sskList.Title = "Selinka/Schmitz Toolbox"
-		sskList.TextStyle = ui.NewStyle(ui.ColorBlue)
 		sskList.WrapText = false
+		sskList.SelectedRowStyle = ui.NewStyle(ui.ColorCyan)
 	}
 	sskList.Rows = tools
 }
@@ -66,13 +73,13 @@ func toolList() {
 func requirementsList(tool string) {
 	if reqList == nil {
 		reqList = widgets.NewList()
-		reqList.Title = "Benötigte Listen"
+		reqList.Title = "Benoetigte Listen"
 		reqList.WrapText = false
 	}
 	switch tool {
 	case "Auslastung":
 		reqList.Rows = []string{"Auslastung 1", "Auslastung 2"}
-	case "Rentabilität":
+	case "Deckungsbeitrag":
 		reqList.Rows = []string{"Rent 1", "Rent 2"}
 	}
 }
@@ -96,10 +103,12 @@ func eventLoop() {
 				return
 			case "<Down>":
 				sskList.ScrollDown()
-				ui.Render(sskList)
+				requirementsList(tools[sskList.SelectedRow])
+				ui.Render(grid)
 			case "<Up>":
 				sskList.ScrollUp()
-				ui.Render(sskList)
+				requirementsList(tools[sskList.SelectedRow])
+				ui.Render(grid)
 			}
 		}
 	}
