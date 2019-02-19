@@ -30,9 +30,10 @@ var (
 		"Auslastung",
 		"Deckungsbeitrag",
 	}
-	sskList *widgets.List
-	reqList *widgets.List
+	sskList *toolList
+	reqList *requirementsList
 	grid    *ui.Grid
+	nav     *navigator
 )
 
 const ()
@@ -45,12 +46,18 @@ func main() {
 	grid = ui.NewGrid()
 	ui.Theme.Default = ui.NewStyle(ui.ColorBlack)
 
-	toolList()
-	requirementsList(tools[0])
+	sskList = newToolList(tools)
+	reqList = newRequirementsList(map[string][]string{
+		"Auslastung":      {"A 1", "A 2"},
+		"Deckungsbeitrag": {"D 1", "D 2"},
+	})
+
+	nav = newNavigator(&[]navigatable{sskList, reqList}, grid)
+
 	grid.Set(
 		ui.NewRow(1.0,
-			ui.NewCol(1.0/2, sskList),
-			ui.NewCol(1.0/2, reqList),
+			ui.NewCol(1.0/2, sskList.list),
+			ui.NewCol(1.0/2, reqList.list),
 		),
 	)
 
@@ -58,30 +65,6 @@ func main() {
 	grid.SetRect(0, 0, termWidth, termHeight)
 	ui.Render(grid)
 	eventLoop()
-}
-
-func toolList() {
-	if sskList == nil {
-		sskList = widgets.NewList()
-		sskList.Title = "Selinka/Schmitz Toolbox"
-		sskList.WrapText = false
-		sskList.SelectedRowStyle = ui.NewStyle(ui.ColorCyan)
-	}
-	sskList.Rows = tools
-}
-
-func requirementsList(tool string) {
-	if reqList == nil {
-		reqList = widgets.NewList()
-		reqList.Title = "Benoetigte Listen"
-		reqList.WrapText = false
-	}
-	switch tool {
-	case "Auslastung":
-		reqList.Rows = []string{"Auslastung 1", "Auslastung 2"}
-	case "Deckungsbeitrag":
-		reqList.Rows = []string{"Rent 1", "Rent 2"}
-	}
 }
 
 func eventLoop() {
@@ -99,17 +82,163 @@ func eventLoop() {
 			return
 		case e := <-uiEvents:
 			switch e.ID {
+			case "<Resize>":
+				payload := e.Payload.(ui.Resize)
+				termWidth, termHeight := payload.Width, payload.Height
+				grid.SetRect(0, 0, termWidth, termHeight)
+				ui.Clear()
+				ui.Render(grid)
 			case "q", "<C-c>":
 				return
 			case "<Down>":
-				sskList.ScrollDown()
-				requirementsList(tools[sskList.SelectedRow])
-				ui.Render(grid)
+				nav.down()
+
 			case "<Up>":
-				sskList.ScrollUp()
-				requirementsList(tools[sskList.SelectedRow])
-				ui.Render(grid)
+				nav.up()
+
+			case "<Tab>":
+				nav.focusOnNextItem()
 			}
 		}
 	}
+}
+
+type navigator struct {
+	items *[]navigatable
+	index int
+	grid  *ui.Grid
+}
+
+func newNavigator(items *[]navigatable, grid *ui.Grid) *navigator {
+	return &navigator{
+		items: items,
+		index: 0,
+		grid:  grid,
+	}
+}
+
+func (nav *navigator) focusOnNextItem() {
+	if nav.index > len(*nav.items) {
+		nav.index = 0
+		(*nav.items)[0].setActive(true)
+		(*nav.items)[len(*nav.items)-1].setActive(false)
+		ui.Render(nav.grid)
+		return
+	}
+	(*nav.items)[nav.index+1].setActive(true)
+	(*nav.items)[nav.index].setActive(false)
+	ui.Render(nav.grid)
+}
+
+func (nav *navigator) up() {
+	(*nav.items)[nav.index].up()
+	ui.Render(nav.grid)
+}
+
+func (nav *navigator) down() {
+	(*nav.items)[nav.index].down()
+	ui.Render(nav.grid)
+}
+
+type navigatable interface {
+	setActive(active bool)
+	up()
+	down()
+	selectedRowContent() string
+	selectedRowIndex() uint
+}
+
+type toolList struct {
+	list   *widgets.List
+	tools  []string
+	active bool
+}
+
+func newToolList(tools []string) *toolList {
+	tl := toolList{
+		list:   widgets.NewList(),
+		tools:  tools,
+		active: false,
+	}
+	tl.list.Rows = tools
+	return &tl
+}
+
+func (tl *toolList) setTitle(title string) {
+	tl.list.Title = title
+}
+
+func (tl *toolList) selectedRow() uint {
+	return tl.list.SelectedRow
+}
+
+// satisfy navigatable
+func (tl *toolList) up() {
+	tl.list.ScrollUp()
+}
+
+func (tl *toolList) down() {
+	tl.list.ScrollDown()
+}
+
+func (tl *toolList) setActive(active bool) {
+	tl.active = active
+	if active {
+		tl.list.SelectedRowStyle = ui.NewStyle(ui.ColorBlack)
+	} else {
+		tl.list.SelectedRowStyle = ui.NewStyle(ui.ColorCyan)
+	}
+}
+
+func (tl *toolList) selectedRowContent() string {
+	return tl.list.Rows[tl.selectedRowIndex()]
+}
+
+func (tl *toolList) selectedRowIndex() uint {
+	return tl.list.SelectedRow
+}
+
+type requirementsList struct {
+	list         *widgets.List
+	requirements map[string][]string
+	active       bool
+}
+
+func newRequirementsList(requirements map[string][]string) *requirementsList {
+	rl := requirementsList{
+		list:         widgets.NewList(),
+		requirements: requirements,
+		active:       false,
+	}
+	return &rl
+}
+
+func (rl *requirementsList) listRequirements(key string) {
+	rl.list.Rows = rl.requirements[key]
+}
+
+// satisfy navigatable
+func (rl *requirementsList) up() {
+	rl.list.ScrollUp()
+}
+
+func (rl *requirementsList) down() {
+	rl.list.ScrollDown()
+}
+
+func (rl *requirementsList) setActive(active bool) {
+	rl.active = active
+	if active {
+		rl.list.SelectedRowStyle = ui.NewStyle(ui.ColorBlack)
+	} else {
+		rl.list.SelectedRowStyle = ui.NewStyle(ui.ColorCyan)
+	}
+}
+
+func (rl *requirementsList) selectedRowContent() string {
+	return rl.list.Rows[rl.selectedRowIndex()]
+}
+
+func (rl *requirementsList) selectedRowIndex() uint {
+	return rl.list.SelectedRow
 }
