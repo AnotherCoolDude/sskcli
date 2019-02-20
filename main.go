@@ -15,11 +15,12 @@
 package main
 
 import (
-	wg "github.com/AnotherCoolDude/sskcli/widgets"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	wg "github.com/AnotherCoolDude/sskcli/widgets"
 
 	ui "github.com/gizak/termui"
 )
@@ -30,9 +31,9 @@ var (
 		"Deckungsbeitrag",
 	}
 	sskList *wg.ToolList
-	reqList *requirementsList
+	reqList *wg.RequirementsList
 	grid    *ui.Grid
-	nav     *navigator
+	nav     *wg.Navigator
 )
 
 const ()
@@ -44,17 +45,17 @@ func main() {
 	defer ui.Close()
 	grid = ui.NewGrid()
 	sskList = wg.NewToolList(tools)
-	reqList = newRequirementsList(map[string][]string{
+	reqList = wg.NewRequirementsList(map[string][]string{
 		"Auslastung":      {"A 1", "A 2"},
 		"Deckungsbeitrag": {"D 1", "D 2"},
 	})
 
-	nav = newNavigator(&[]navigatable{sskList, reqList}, grid)
+	nav = wg.NewNavigator(&[]wg.Navigatable{sskList, reqList}, grid)
 
 	grid.Set(
 		ui.NewRow(1.0,
-			ui.NewCol(1.0/2, sskList.list),
-			ui.NewCol(1.0/2, reqList.list),
+			ui.NewCol(1.0/2, sskList.Griditem()),
+			ui.NewCol(1.0/2, reqList.Griditem()),
 		),
 	)
 
@@ -88,13 +89,17 @@ func eventLoop() {
 			case "q", "<C-c>":
 				return
 			case "<Down>":
-				nav.down()
-
+				nav.Down()
+				if nav.FocusedItem() == sskList {
+					reqList.ListRequirements(sskList.SelectedRowContent())
+				}
 			case "<Up>":
-				nav.up()
-
+				nav.Up()
+				if nav.FocusedItem() == sskList {
+					reqList.ListRequirements(sskList.SelectedRowContent())
+				}
 			case "<Tab>":
-				nav.focusOnNextItem()
+				nav.FocusOnNextItem()
 			}
 		}
 	}

@@ -51,10 +51,17 @@ func (tl *ToolList) setActive(active bool) {
 	}
 }
 
-func (tl *ToolList) selectedRowContent() string {
-	return tl.list.Rows[tl.selectedRowIndex()]
+// SelectedRowContent returns the content of the selected row
+func (tl *ToolList) SelectedRowContent() string {
+	return tl.list.Rows[tl.SelectedRowIndex()]
 }
 
-func (tl *ToolList) selectedRowIndex() uint {
+// SelectedRowIndex returns the selected row index
+func (tl *ToolList) SelectedRowIndex() uint {
 	return tl.list.SelectedRow
+}
+
+// Griditem returns the drawable interface needed for ui.grid
+func (tl *ToolList) Griditem() ui.Drawable {
+	return tl.list
 }
