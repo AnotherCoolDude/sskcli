@@ -58,10 +58,12 @@ func main() {
 			ui.NewCol(1.0/2, reqList.Griditem()),
 		),
 	)
-
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
+
 	ui.Render(grid)
+	nav.FocusOnItem(0)
+	reqList.ListRequirements(sskList.SelectedRowContent())
 	eventLoop()
 }
 
@@ -92,11 +94,13 @@ func eventLoop() {
 				nav.Down()
 				if nav.FocusedItem() == sskList {
 					reqList.ListRequirements(sskList.SelectedRowContent())
+					nav.RenderItems()
 				}
 			case "<Up>":
 				nav.Up()
 				if nav.FocusedItem() == sskList {
 					reqList.ListRequirements(sskList.SelectedRowContent())
+					nav.RenderItems()
 				}
 			case "<Tab>":
 				nav.FocusOnNextItem()

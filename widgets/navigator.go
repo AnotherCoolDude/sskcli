@@ -27,21 +27,19 @@ func (nav *Navigator) FocusOnNextItem() {
 		nav.index = 0
 	}
 	(*nav.items)[nav.index].setActive(true)
-	ui.Render(nav.grid)
+	nav.RenderItems()
 }
 
 // Up scrolls one row up in the focused item
 func (nav *Navigator) Up() {
 	(*nav.items)[nav.index].up()
-	ui.Render(nav.grid)
+	nav.RenderItems()
 }
 
 // Down scrolls one row down in the focused item
 func (nav *Navigator) Down() {
 	(*nav.items)[nav.index].down()
-	for _, item := range *nav.items {
-		ui.Render(item.Griditem())
-	}
+	nav.RenderItems()
 }
 
 //FocusedItem returns the currently focused item
@@ -57,4 +55,17 @@ type Navigatable interface {
 	SelectedRowContent() string
 	SelectedRowIndex() uint
 	Griditem() ui.Drawable
+}
+
+// RenderItems renders all navigator items
+func (nav *Navigator) RenderItems() {
+	for _, item := range *nav.items {
+		ui.Render(item.Griditem())
+	}
+}
+
+// FocusOnItem focuses on the item at index index
+func (nav *Navigator) FocusOnItem(index int) {
+	nav.index = index
+	nav.RenderItems()
 }
