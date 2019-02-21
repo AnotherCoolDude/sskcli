@@ -62,8 +62,9 @@ func main() {
 	grid.SetRect(0, 0, termWidth, termHeight)
 
 	ui.Render(grid)
-	nav.FocusOnItem(0)
 	reqList.ListRequirements(sskList.SelectedRowContent())
+	nav.FocusOnItem(0)
+	nav.RenderItems()
 	eventLoop()
 }
 

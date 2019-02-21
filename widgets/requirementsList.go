@@ -19,6 +19,7 @@ func NewRequirementsList(requirements map[string][]string) *RequirementsList {
 		requirements: requirements,
 		active:       false,
 	}
+	rl.list.SelectedRow = 0
 	return &rl
 }
 

@@ -1,6 +1,10 @@
 package widgets
 
-import ui "github.com/gizak/termui"
+import (
+	"fmt"
+
+	ui "github.com/gizak/termui"
+)
 
 // Navigator enables tab-based navigation through privded navigatable items
 type Navigator struct {
@@ -66,6 +70,11 @@ func (nav *Navigator) RenderItems() {
 
 // FocusOnItem focuses on the item at index index
 func (nav *Navigator) FocusOnItem(index int) {
+	if index > len(*nav.items)-1 {
+		fmt.Printf("index %d out of bounds\n", index)
+		return
+	}
 	nav.index = index
+	(*nav.items)[nav.index].setActive(true)
 	nav.RenderItems()
 }
