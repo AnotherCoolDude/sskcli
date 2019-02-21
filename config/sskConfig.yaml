@@ -1,0 +1,12 @@
+toolListTitle: "SSK Toolbox"
+tools:
+  - name: "Auslastung"
+    actions:
+      - name: "run"
+        desc: "füllt die Excel-Datei Auslastung mit den Proad-Exporten aus"
+      - name: "test"
+        desc: "überprüft, ob die Excel-Datei existiert und prüft die Proad-Exporte"
+  - name: "Monatsauswertung"
+    actions:
+      - name: "run"
+        desc: "erstellt eine Monatsübersicht"

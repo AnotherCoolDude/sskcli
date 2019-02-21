@@ -31,7 +31,7 @@ var (
 		"Deckungsbeitrag",
 	}
 	sskList *wg.ToolList
-	reqList *wg.RequirementsList
+	depList *wg.DependencyList
 	grid    *ui.Grid
 	nav     *wg.Navigator
 )
@@ -43,31 +43,39 @@ func main() {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
+	setupGrid()
+	initWidgets()
+	eventLoop()
+}
+
+// setup / init
+func setupGrid() {
 	grid = ui.NewGrid()
-	sskList = wg.NewToolList(tools)
-	reqList = wg.NewRequirementsList(map[string][]string{
-		"Auslastung":      {"A 1", "A 2"},
-		"Deckungsbeitrag": {"D 1", "D 2"},
-	})
-
-	nav = wg.NewNavigator(&[]wg.Navigatable{sskList, reqList}, grid)
-
 	grid.Set(
 		ui.NewRow(1.0,
 			ui.NewCol(1.0/2, sskList.Griditem()),
-			ui.NewCol(1.0/2, reqList.Griditem()),
+			ui.NewCol(1.0/2, depList.Griditem()),
 		),
 	)
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
 
 	ui.Render(grid)
-	reqList.ListRequirements(sskList.SelectedRowContent())
-	nav.FocusOnItem(0)
-	nav.RenderItems()
-	eventLoop()
 }
 
+func initWidgets() {
+	sskList = wg.NewToolList(tools)
+	depList = wg.NewDependencyList(map[string][]string{
+		"Auslastung":      {"A 1", "A 2"},
+		"Deckungsbeitrag": {"D 1", "D 2"},
+	})
+	nav = wg.NewNavigator(&[]wg.Navigatable{sskList, depList}, grid)
+	depList.ListDependencies(sskList.SelectedRowContent())
+	nav.FocusOnItem(0)
+	nav.RenderItems()
+}
+
+// eventLoop
 func eventLoop() {
 
 	// handles kill signal sent to gotop
@@ -94,13 +102,13 @@ func eventLoop() {
 			case "<Down>":
 				nav.Down()
 				if nav.FocusedItem() == sskList {
-					reqList.ListRequirements(sskList.SelectedRowContent())
+					depList.ListDependencies(sskList.SelectedRowContent())
 					nav.RenderItems()
 				}
 			case "<Up>":
 				nav.Up()
 				if nav.FocusedItem() == sskList {
-					reqList.ListRequirements(sskList.SelectedRowContent())
+					depList.ListDependencies(sskList.SelectedRowContent())
 					nav.RenderItems()
 				}
 			case "<Tab>":
