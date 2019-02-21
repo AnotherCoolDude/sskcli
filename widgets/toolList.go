@@ -20,6 +20,7 @@ func NewToolList(tools []string) *ToolList {
 		active: false,
 	}
 	tl.list.Rows = tools
+	tl.list.SelectedRow = 0
 	return &tl
 }
 

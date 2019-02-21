@@ -20,20 +20,22 @@ import (
 	"os/signal"
 	"syscall"
 
+	parser "github.com/AnotherCoolDude/sskcli/parser"
 	wg "github.com/AnotherCoolDude/sskcli/widgets"
 
 	ui "github.com/gizak/termui"
 )
 
 var (
-	tools = []string{
-		"Auslastung",
-		"Deckungsbeitrag",
-	}
-	sskList *wg.ToolList
-	depList *wg.DependencyList
-	grid    *ui.Grid
-	nav     *wg.Navigator
+	// tools = []string{
+	// 	"Auslastung",
+	// 	"Deckungsbeitrag",
+	// }
+	sskList  *wg.ToolList
+	depList  *wg.DependencyList
+	descList *wg.DependencyList
+	grid     *ui.Grid
+	nav      *wg.Navigator
 )
 
 const ()
@@ -43,8 +45,8 @@ func main() {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
-	setupGrid()
 	initWidgets()
+	setupGrid()
 	eventLoop()
 }
 
@@ -52,10 +54,11 @@ func main() {
 func setupGrid() {
 	grid = ui.NewGrid()
 	grid.Set(
-		ui.NewRow(1.0,
+		ui.NewRow(1.0/2,
 			ui.NewCol(1.0/2, sskList.Griditem()),
 			ui.NewCol(1.0/2, depList.Griditem()),
 		),
+		ui.NewRow(1.0/2, descList.Griditem()),
 	)
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
@@ -64,12 +67,16 @@ func setupGrid() {
 }
 
 func initWidgets() {
+	config := parser.ParseYaml("./config/sskConfig.yaml")
+	tools, deps, descs := config.Split()
 	sskList = wg.NewToolList(tools)
-	depList = wg.NewDependencyList(map[string][]string{
-		"Auslastung":      {"A 1", "A 2"},
-		"Deckungsbeitrag": {"D 1", "D 2"},
-	})
-	nav = wg.NewNavigator(&[]wg.Navigatable{sskList, depList}, grid)
+	depList = wg.NewDependencyList(deps)
+	// depList = wg.NewDependencyList(map[string][]string{
+	// 	"Auslastung":      {"A 1", "A 2"},
+	// 	"Deckungsbeitrag": {"D 1", "D 2"},
+	// })
+	descList = wg.NewDependencyList(descs)
+	nav = wg.NewNavigator(&[]wg.Navigatable{sskList, depList, descList}, grid)
 	depList.ListDependencies(sskList.SelectedRowContent())
 	nav.FocusOnItem(0)
 	nav.RenderItems()
